@@ -17,8 +17,17 @@ bool initGL();
 void render();
 bool LoadTexture(const char* filename, GLuint& texID);
 GLuint CreateCube(float, GLuint&, GLuint&);
+
 void DrawCube(GLuint id);
 void close();
+
+// 1. Step
+// Define key variables for linear interpolation
+glm::vec3 initialPosition(0.0f, 0.0f, 0.0f);   // Initial position of the cube
+glm::vec3 finalPosition(2.0f, 0.0f, 0.0f);     // Final position of the cube
+float animationDuration = 3000.0f;               // Animation duration in milliseconds
+Uint32 startTime;                               // Start time of the animation
+//
 
 //The window we'll be rendering to
 SDL_Window* gWindow = NULL;
@@ -87,6 +96,10 @@ void HandleKeyUp(const SDL_KeyboardEvent& key)
 
 bool init()
 {
+	//2. Step. Initialize Variables:
+	startTime = SDL_GetTicks();
+	//
+
 	//Initialization flag
 	bool success = true;
 
@@ -164,23 +177,28 @@ bool initGL()
 	if (!LoadTexture("concrete.jpg", texID1))
 	{
 		printf("Could not load texture \"concrete.jpg\"");
+		success = false;
 	}
 	if (!LoadTexture("opengl_logo.png", texID2))
 	{
 		printf("Could not load texture \"opengl_logo.png\"");
+		success = false;
 	}
 
+	// Load shaders
 	shader.Load(".\\shaders\\vertex.vs", ".\\shaders\\fragment.fs");
-	shader.use(); //we have to use the shader before setting uniforms
-	shader.setInt("Texture1", 0); //tell the shader that the sampler Texture1 should take its data from texture unit 0 (GL_TEXTURE0)
+	shader.use(); // We have to use the shader before setting uniforms
+	shader.setInt("Texture1", 0); // Tell the shader that the sampler Texture1 should take its data from texture unit 0 (GL_TEXTURE0)
 	shader.setInt("Texture2", 1);
 
+	// Create cube VAO
 	gVAO = CreateCube(1.0f, gVBO, gEBO);
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //other modes GL_FILL, GL_POINT
+	
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Other modes GL_FILL, GL_POINT
 
 	return success;
 }
+
 
 bool LoadTexture(const char* filename, GLuint& texID)
 {
@@ -221,6 +239,24 @@ bool LoadTexture(const char* filename, GLuint& texID)
 	return true;
 }
 
+glm::vec3 AnimateCube(const glm::vec3& initialPosition, const glm::vec3& finalPosition, float duration, Uint32 startTime)
+{
+	Uint32 currentTime = SDL_GetTicks();
+	float elapsedTime = static_cast<float>(currentTime - startTime);
+
+	// Ensure elapsed time doesn't exceed the duration
+	if (elapsedTime > duration)
+		elapsedTime = duration;
+
+	// Calculate the interpolation factor (a value between 0 and 1)
+	float t = elapsedTime / duration;
+
+	// Perform linear interpolation between initial and final positions
+	glm::vec3 interpolatedPosition = initialPosition + t * (finalPosition - initialPosition);
+
+	return interpolatedPosition;
+}
+
 void close()
 {
 	//delete GL programs, buffers and objects
@@ -240,33 +276,47 @@ void close()
 
 void render()
 {
-	//Clear color buffer
+	// Clear color buffer
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glm::mat4 model = glm::mat4(1.0f);
+	// Calculate animation progress (a value between 0.0 and 1.0)
+	float progress = static_cast<float>(SDL_GetTicks() - startTime) / animationDuration;
+
+	// Ensure progress is clamped between 0.0 and 1.0
+	progress = glm::clamp(progress, 0.0f, 1.0f);
+
+	// Perform linear interpolation between initial and final positions
+	glm::vec3 interpolatedPosition = AnimateCube(initialPosition, finalPosition, animationDuration, startTime);
+
+	// Create the model matrix with the interpolated position
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), interpolatedPosition);
 	model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 0, 1));
 
+	// Set view and projection matrices (unchanged from the original code)
 	glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	glm::mat4 proj = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
 
+	// Use the shader and set matrices
 	glUseProgram(shader.ID);
 	shader.setMat4("model", model);
 	shader.setMat4("view", view);
 	shader.setMat4("proj", proj);
 
-	//not actually necessary because GL_TEXTURE0 is active by default
-	glActiveTexture(GL_TEXTURE0); 
+	// Not actually necessary because GL_TEXTURE0 is active by default
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texID1);
-	//if multiple textures have to be bound at the same time they are placed in different texture units (slots) -
-	//available are GL_TEXTURE0 - GL_TEXTURE15, to be used they have to be activated
+
+	// If multiple textures have to be bound at the same time, they are placed in different texture units (slots)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texID2);
 
+	// Draw the cube
 	DrawCube(gVAO);
-	model = glm::translate(glm::mat4(1.0f), glm::vec3(2, 0, 0));
-	shader.setMat4("model", model);
-	DrawCube(gVAO);
+
+	// Update screen
+	SDL_GL_SwapWindow(gWindow);
 }
+
 
 GLuint CreateCube(float width, GLuint& VBO, GLuint& EBO)
 {
@@ -318,6 +368,10 @@ GLuint CreateCube(float width, GLuint& VBO, GLuint& EBO)
 	//the elements buffer must be unbound after the vertex array otherwise the vertex array will not have an associated elements buffer array
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+	// Create the cube model matrix with the initial position
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), initialPosition);
+	// Assign the model matrix to the shader
+
 	return VAO;
 }
 
@@ -329,5 +383,7 @@ void DrawCube(GLuint vaoID)
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }
+
+
 
 
