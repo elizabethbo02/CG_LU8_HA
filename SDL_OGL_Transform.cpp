@@ -239,23 +239,33 @@ bool LoadTexture(const char* filename, GLuint& texID)
 	return true;
 }
 
-glm::vec3 AnimateCube(const glm::vec3& initialPosition, const glm::vec3& finalPosition, float duration, Uint32 startTime)
+glm::vec3 AnimateCube(const glm::vec3& initial, const glm::vec3 & final, float duration)
 {
+	// Get the current time
 	Uint32 currentTime = SDL_GetTicks();
-	float elapsedTime = static_cast<float>(currentTime - startTime);
 
-	// Ensure elapsed time doesn't exceed the duration
-	if (elapsedTime > duration)
-		elapsedTime = duration;
+	// Calculate total elapsed time since the start of the animation
+	float totalElapsedTime = static_cast<float>(currentTime);
 
-	// Calculate the interpolation factor (a value between 0 and 1)
-	float t = elapsedTime / duration;
+	// Calculate the total duration considering the back-and-forth motion
+	float totalDuration = 2.0f * duration;
 
-	// Perform linear interpolation between initial and final positions
-	glm::vec3 interpolatedPosition = initialPosition + t * (finalPosition - initialPosition);
+	// Map total elapsed time to a value between 0.0 and 1.0 within the total duration
+	float t = fmod(totalElapsedTime, totalDuration) / totalDuration;
+
+	// If t exceeds 0.5, reverse the motion (return to the start)
+	if (t > 0.5f) {
+		t = 1.0f - t;
+	}
+
+	// Use linear interpolation to calculate the interpolated position
+	glm::vec3 interpolatedPosition = initial + t * (final - initial);
 
 	return interpolatedPosition;
 }
+
+
+
 
 void close()
 {
@@ -286,8 +296,8 @@ void render()
 	progress = glm::clamp(progress, 0.0f, 1.0f);
 
 	// Perform linear interpolation between initial and final positions
-	glm::vec3 interpolatedPosition = AnimateCube(initialPosition, finalPosition, animationDuration, startTime);
-
+	glm::vec3 interpolatedPosition = AnimateCube(initialPosition, finalPosition, animationDuration);
+	
 	// Create the model matrix with the interpolated position
 	glm::mat4 model = glm::translate(glm::mat4(1.0f), interpolatedPosition);
 	model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 0, 1));
