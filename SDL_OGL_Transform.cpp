@@ -25,7 +25,7 @@ void close();
 // Define key variables for linear interpolation
 glm::vec3 initialPosition(0.0f, 0.0f, 0.0f);   // Initial position of the cube
 glm::vec3 finalPosition(2.0f, 0.0f, 0.0f);     // Final position of the cube
-float animationDuration = 3000.0f;               // Animation duration in milliseconds
+float animationDuration = 1500.0f;               // Animation duration in milliseconds
 Uint32 startTime;                               // Start time of the animation
 //
 
@@ -264,9 +264,6 @@ glm::vec3 AnimateCube(const glm::vec3& initial, const glm::vec3 & final, float d
 	return interpolatedPosition;
 }
 
-
-
-
 void close()
 {
 	//delete GL programs, buffers and objects
@@ -300,7 +297,7 @@ void render()
 	
 	// Create the model matrix with the interpolated position
 	glm::mat4 model = glm::translate(glm::mat4(1.0f), interpolatedPosition);
-	model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 0, 1));
+	//model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 0, 1));
 
 	// Set view and projection matrices (unchanged from the original code)
 	glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
