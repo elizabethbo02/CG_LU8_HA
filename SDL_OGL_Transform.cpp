@@ -21,10 +21,9 @@ GLuint CreateCube(float, GLuint&, GLuint&);
 void DrawCube(GLuint id);
 void close();
 
-// 1. Step
-// Define key variables for linear interpolation
-glm::vec3 initialPosition(0.0f, 0.0f, 0.0f);   // Initial position of the cube
-glm::vec3 finalPosition(2.0f, 0.0f, 0.0f);     // Final position of the cube
+// Defining key variables for linear interpolation
+glm::vec3 initialPosition(0.0f, 0.0f, 0.0f);       // Initial position of the cube
+glm::vec3 finalPosition(2.0f, 0.0f, 0.0f);        // Final position of the cube
 float animationDuration = 1500.0f;               // Animation duration in milliseconds
 Uint32 startTime;                               // Start time of the animation
 //
@@ -96,9 +95,9 @@ void HandleKeyUp(const SDL_KeyboardEvent& key)
 
 bool init()
 {
-	//2. Step. Initialize Variables:
+	//Initialize Variable, indicating current time 
+	//in milliseconds since the initialization of the SDL library
 	startTime = SDL_GetTicks();
-	//
 
 	//Initialization flag
 	bool success = true;
@@ -299,7 +298,7 @@ void render()
 	glm::mat4 model = glm::translate(glm::mat4(1.0f), interpolatedPosition);
 	//model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 0, 1));
 
-	// Set view and projection matrices (unchanged from the original code)
+	// Set view and projection matrices 
 	glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	glm::mat4 proj = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
 
@@ -329,17 +328,16 @@ GLuint CreateCube(float width, GLuint& VBO, GLuint& EBO)
 {
 	GLfloat vertices[] = {
 		//vertex position //vertex color
-		0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,  // top right
-		0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom right
+		0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,    // top right
+		0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,   // bottom right
 		-0.5f, -0.5f, 0.0f,0.0f, 1.0f, 0.0f, 0.0f, 0.0f,  // bottom left
-		-0.5f,  0.5f, 0.0f,0.0f, 1.0f, 0.0f, 0.0f, 1.0f   // top left 
+		-0.5f,  0.5f, 0.0f,0.0f, 1.0f, 0.0f, 0.0f, 1.0f  // top left 
 	};
 	//indexed drawing - we will be using the indices to point to a vertex in the vertices array
 	GLuint indices[] = {  
 		0, 1, 3,   // first triangle
 		1, 2, 3    // second triangle
 	};
-
 
 	GLuint VAO;
 	glGenBuffers(1, &VBO);
